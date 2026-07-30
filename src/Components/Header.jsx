@@ -8,7 +8,7 @@ const Header = ({ onGetStarted }) => (
         <span className="grid size-10 place-items-center rounded-xl bg-lime-400 text-[#082b2b] shadow-lg shadow-lime-400/20">
           <FiImage size={21} />
         </span>
-        <span className="text-lg font-bold tracking-tight text-white">Resize<span className="text-lime-300">Photo</span></span>
+        <span className="text-lg font-bold tracking-tight text-white">Resize<span className="text-lime-300">Picture</span></span>
       </button>
       <button onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-xl bg-lime-400 px-4 py-2.5 text-sm font-bold text-[#082b2b] transition hover:bg-lime-300">
         <FiUpload />

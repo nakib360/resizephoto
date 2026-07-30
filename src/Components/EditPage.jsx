@@ -165,7 +165,7 @@ const EditPage = ({ image, onReset }) => {
       link.href = downloadUrl;
       const baseName = image.name.replace(/\.[^/.]+$/, "") || "image";
       const timestamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "").replace("T", "-");
-      link.download = `${baseName}-${timestamp}-resizephoto.jpg`;
+      link.download = `${baseName}-${timestamp}-resizepicture.jpg`;
       document.body.appendChild(link);
       link.click();
       link.remove();
