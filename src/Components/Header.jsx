@@ -1,22 +1,22 @@
 import React from "react";
+import { FiImage, FiUpload } from "react-icons/fi";
 
-const Header = () => {
-  return (
-    <header className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <h1 className="text-3xl font-bold cursor-pointer">
-          <span className="text-white">Resize</span>
-          <span className="text-blue-500">Photo</span>
-        </h1>
-
-        {/* Get Started Button */}
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium transition duration-300">
-          Get Started
-        </button>
-      </div>
-    </header>
-  );
-};
+const Header = ({ onGetStarted }) => (
+  <header className="sticky top-0 z-50 border-b border-white/10 bg-[#092c2c]/85 backdrop-blur-xl">
+    <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
+      <button onClick={onGetStarted} className="flex items-center gap-3 text-left">
+        <span className="grid size-10 place-items-center rounded-xl bg-lime-400 text-[#082b2b] shadow-lg shadow-lime-400/20">
+          <FiImage size={21} />
+        </span>
+        <span className="text-lg font-bold tracking-tight text-white">Pixel<span className="text-lime-300">Fit</span></span>
+      </button>
+      <button onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-xl bg-lime-400 px-4 py-2.5 text-sm font-bold text-[#082b2b] transition hover:bg-lime-300">
+        <FiUpload />
+        <span className="hidden sm:inline">Upload image</span>
+        <span className="sm:hidden">Upload</span>
+      </button>
+    </div>
+  </header>
+);
 
 export default Header;
