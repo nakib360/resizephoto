@@ -15,7 +15,7 @@ const Header = ({ onGetStarted }) => (
         <span className="hidden sm:inline">Upload image</span> 
         <span className="sm:hidden">Upload</span>
       </button>
-    </div>
+    </div> 
   </header>
 );
 
