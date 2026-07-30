@@ -11,7 +11,6 @@ const EditPage = ({ image, onReset }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [targetSize, setTargetSize] = useState("500");
-  const [sizeUnit, setSizeUnit] = useState("KB");
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState("");
 
@@ -25,7 +24,7 @@ const EditPage = ({ image, onReset }) => {
 
   useEffect(() => {
     const img = new Image();
-    img.src = image;
+    img.src = image.url;
     img.onload = () => { imgRef.current = img; setWidth(img.width); setHeight(img.height); setZoom(1); setPosition({ x: 0, y: 0 }); };
   }, [image]);
 
@@ -90,9 +89,44 @@ const EditPage = ({ image, onReset }) => {
     setZoom(nextZoom);
     setPosition((current) => clampPosition(current.x, current.y, canvasWidth, canvasHeight, nextZoom));
   };
-  const createWebp = (canvas, quality) => new Promise((resolve) => {
-    canvas.toBlob(resolve, "image/webp", quality);
+  const createJpeg = (canvas, quality) => new Promise((resolve) => {
+    canvas.toBlob(resolve, "image/jpeg", quality);
   });
+
+  const canvasAtSize = (source, nextWidth, nextHeight) => {
+    const output = document.createElement("canvas");
+    output.width = nextWidth;
+    output.height = nextHeight;
+    const context = output.getContext("2d");
+    // JPEG has no transparency, so keep transparent PNG areas white.
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, nextWidth, nextHeight);
+    context.drawImage(source, 0, 0, nextWidth, nextHeight);
+    return output;
+  };
+
+  const bestJpegForTarget = async (source, targetBytes) => {
+    const highestQuality = await createJpeg(source, 0.98);
+    if (highestQuality.size <= targetBytes) return highestQuality;
+
+    const lowestQuality = await createJpeg(source, 0.02);
+    if (lowestQuality.size > targetBytes) return null;
+
+    let low = 0.02;
+    let high = 0.98;
+    let closest = lowestQuality;
+    for (let attempt = 0; attempt < 14; attempt += 1) {
+      const quality = (low + high) / 2;
+      const candidate = await createJpeg(source, quality);
+      if (candidate.size <= targetBytes) {
+        closest = candidate;
+        low = quality;
+      } else {
+        high = quality;
+      }
+    }
+    return closest;
+  };
 
   const download = async () => {
     const canvas = canvasRef.current;
@@ -100,50 +134,45 @@ const EditPage = ({ image, onReset }) => {
     const exportHeight = Number(height);
     const requestedSize = Number(targetSize);
     if (!canvas || !exportWidth || !exportHeight || !requestedSize) return;
-    const targetBytes = requestedSize * (sizeUnit === "MB" ? 1024 * 1024 : 1024);
+    const targetBytes = requestedSize * 1024;
     setIsExporting(true);
     setExportMessage("");
 
-    // WebP lets us control quality. Binary search finds the best quality
-    // whose file size stays at or below the requested target.
-    const highestQuality = await createWebp(canvas, 1);
-    const lowestQuality = await createWebp(canvas, 0.02);
-    let file = highestQuality;
-    let message = "Best quality was already below your target.";
+    let outputCanvas = canvasAtSize(canvas, exportWidth, exportHeight);
+    let file = await bestJpegForTarget(outputCanvas, targetBytes);
+    let outputWidth = exportWidth;
+    let outputHeight = exportHeight;
 
-    if (highestQuality.size > targetBytes) {
-      if (lowestQuality.size > targetBytes) {
-        file = lowestQuality;
-        message = "The target is too small for these dimensions; exported at the smallest practical size.";
-      } else {
-        let low = 0.02;
-        let high = 1;
-        let closest = lowestQuality;
-        for (let attempt = 0; attempt < 12; attempt += 1) {
-          const quality = (low + high) / 2;
-          const candidate = await createWebp(canvas, quality);
-          if (candidate.size <= targetBytes) {
-            closest = candidate;
-            low = quality;
-          } else {
-            high = quality;
-          }
-        }
-        file = closest;
-        message = "Optimized to the closest size without going over your target.";
-      }
+    // When quality alone cannot reach the requested KB, progressively reduce
+    // the export resolution. This makes the KB target effective even for very
+    // large images or very small requested sizes.
+    for (let attempt = 0; !file && attempt < 16; attempt += 1) {
+      outputWidth = Math.max(1, Math.floor(outputWidth * 0.8));
+      outputHeight = Math.max(1, Math.floor(outputHeight * 0.8));
+      outputCanvas = canvasAtSize(canvas, outputWidth, outputHeight);
+      file = await bestJpegForTarget(outputCanvas, targetBytes);
+      if (outputWidth === 1 && outputHeight === 1) break;
     }
+
+    const dimensionsChanged = outputWidth !== exportWidth || outputHeight !== exportHeight;
+    const message = dimensionsChanged
+      ? `Target reached by reducing export dimensions to ${outputWidth} × ${outputHeight}px.`
+      : "Optimized to the closest size without going over your target.";
 
     if (file) {
       const downloadUrl = URL.createObjectURL(file);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = `pixelfit-${exportWidth}x${exportHeight}.webp`;
+      const baseName = image.name.replace(/\.[^/.]+$/, "") || "image";
+      const timestamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "").replace("T", "-");
+      link.download = `${baseName}-${timestamp}-resizephoto.jpg`;
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-      setExportMessage(`${message} Exported ${(file.size / 1024).toFixed(1)} KB.`);
+      setExportMessage(`${message} Exported ${(file.size / 1024).toFixed(1)} KB as JPG.`);
+    } else {
+      setExportMessage("This target is too small to create a usable image. Please use a larger KB value.");
     }
     setIsExporting(false);
   };
@@ -151,6 +180,7 @@ const EditPage = ({ image, onReset }) => {
 
   const originalWidth = imgRef.current?.width;
   const originalHeight = imgRef.current?.height;
+  const originalSize = image.size ? `${(image.size / 1024).toFixed(1)} KB` : "–";
 
   return (
     <main className="min-h-[calc(100vh-73px)] bg-[#0b3534] px-4 py-8 sm:px-8 lg:py-12">
@@ -179,9 +209,9 @@ const EditPage = ({ image, onReset }) => {
               <label className="text-xs font-semibold text-slate-600">HEIGHT<input type="number" min="1" value={height} onChange={(event) => updateDimension(event.target.value, setHeight, width, false)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-teal-600 focus:ring-3 focus:ring-teal-600/15" /></label>
             </div>
             <div className="mt-6"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Quick presets</p><div className="mt-3 grid grid-cols-2 gap-2">{[[1080, 1080, "Square"], [1080, 1350, "Portrait"], [1200, 630, "Landscape"], [1920, 1080, "HD"]].map(([presetWidth, presetHeight, name]) => <button key={name} onClick={() => applyPreset(presetWidth, presetHeight)} className="rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-teal-600 hover:bg-teal-50 hover:text-teal-800">{name}<span className="ml-1 text-slate-400">{presetWidth}×{presetHeight}</span></button>)}</div></div>
-            <div className="mt-6 border-t border-slate-200 pt-6"><div className="flex items-end justify-between gap-3"><label className="flex-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Target file size<input type="number" min="1" value={targetSize} onChange={(event) => setTargetSize(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-teal-600 focus:ring-3 focus:ring-teal-600/15" /></label><label className="w-20 text-xs font-semibold uppercase tracking-wide text-slate-500">Unit<select value={sizeUnit} onChange={(event) => setSizeUnit(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-2 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-600"><option>KB</option><option>MB</option></select></label></div><p className="mt-2 text-xs leading-5 text-slate-500">Downloads as WebP at the closest possible size while keeping your selected dimensions.</p></div>
-            <div className="mt-6 rounded-2xl bg-slate-100 p-4 text-xs text-slate-600"><div className="flex justify-between"><span>Original</span><strong>{originalWidth || "–"} × {originalHeight || "–"}</strong></div><div className="mt-2 flex justify-between"><span>Zoom</span><strong>{Math.round(zoom * 100)}%</strong></div></div>
-            <button onClick={download} disabled={isExporting} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b3534] px-4 py-3.5 text-sm font-bold text-white transition hover:bg-[#124846] disabled:cursor-wait disabled:opacity-70"><FiDownload /> {isExporting ? "Optimizing…" : "Download WebP"}</button>
+            <div className="mt-6 border-t border-slate-200 pt-6"><label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Target file size (KB)<input type="number" min="1" value={targetSize} onChange={(event) => setTargetSize(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-teal-600 focus:ring-3 focus:ring-teal-600/15" /></label><p className="mt-2 text-xs leading-5 text-slate-500">Downloads as JPG and keeps the file at or below this KB target.</p></div>
+            <div className="mt-6 rounded-2xl bg-slate-100 p-4 text-xs text-slate-600"><div className="flex justify-between"><span>Original</span><strong>{originalWidth || "–"} × {originalHeight || "–"}</strong></div><div className="mt-2 flex justify-between"><span>Original size</span><strong>{originalSize}</strong></div><div className="mt-2 flex justify-between"><span>Zoom</span><strong>{Math.round(zoom * 100)}%</strong></div></div>
+            <button onClick={download} disabled={isExporting} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b3534] px-4 py-3.5 text-sm font-bold text-white transition hover:bg-[#124846] disabled:cursor-wait disabled:opacity-70"><FiDownload /> {isExporting ? "Optimizing…" : "Download JPG"}</button>
             {exportMessage && <p className="mt-3 text-center text-xs leading-5 text-teal-700">{exportMessage}</p>}
             </aside>
         </div>
@@ -190,5 +220,4 @@ const EditPage = ({ image, onReset }) => {
   );
 };
 
-export default EditPage;
-  
+export default EditPage;  

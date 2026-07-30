@@ -7,7 +7,11 @@ const ImageInput = ({ setImage }) => {
 
   const handleImage = (file) => {
     if (!file || !file.type.startsWith("image/")) return;
-    setImage(URL.createObjectURL(file));
+    setImage({
+      url: URL.createObjectURL(file),
+      name: file.name,
+      size: file.size,
+    });
     setIsDragging(false);
   };
 
