@@ -5,6 +5,7 @@ const EditPage = ({ image, onReset }) => {
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const dragStart = useRef({ x: 0, y: 0 });
+  const touchGesture = useRef(null);
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
   const [zoom, setZoom] = useState(1);
@@ -66,6 +67,12 @@ const EditPage = ({ image, onReset }) => {
     return { x: (event.clientX - bounds.left) * (canvasRef.current.width / bounds.width), y: (event.clientY - bounds.top) * (canvasRef.current.height / bounds.height) };
   };
 
+  const touchDistance = (firstTouch, secondTouch) => {
+    const x = firstTouch.clientX - secondTouch.clientX;
+    const y = firstTouch.clientY - secondTouch.clientY;
+    return Math.hypot(x, y);
+  };
+
   const startDrag = (event) => {
     const point = pointInCanvas(event);
     setDragging(true);
@@ -88,6 +95,65 @@ const EditPage = ({ image, onReset }) => {
 
     setZoom(nextZoom);
     setPosition((current) => clampPosition(current.x, current.y, canvasWidth, canvasHeight, nextZoom));
+  };
+
+  const handleTouchStart = (event) => {
+    if (!imgRef.current) return;
+    event.preventDefault();
+    const canvasWidth = Number(width) || imgRef.current.width;
+    const canvasHeight = Number(height) || imgRef.current.height;
+
+    if (event.touches.length === 1) {
+      const point = pointInCanvas(event.touches[0]);
+      touchGesture.current = {
+        type: "drag",
+        offsetX: point.x - position.x,
+        offsetY: point.y - position.y,
+      };
+      setDragging(true);
+    } else if (event.touches.length >= 2) {
+      touchGesture.current = {
+        type: "pinch",
+        distance: touchDistance(event.touches[0], event.touches[1]),
+        zoom,
+        position,
+        canvasWidth,
+        canvasHeight,
+      };
+      setDragging(false);
+    }
+  };
+
+  const handleTouchMove = (event) => {
+    const gesture = touchGesture.current;
+    if (!gesture || !imgRef.current) return;
+    event.preventDefault();
+
+    if (event.touches.length === 1 && gesture.type === "drag") {
+      const point = pointInCanvas(event.touches[0]);
+      setPosition(clampPosition(point.x - gesture.offsetX, point.y - gesture.offsetY, Number(width), Number(height), zoom));
+    } else if (event.touches.length >= 2 && gesture.type === "pinch") {
+      const minimumZoom = Math.max(gesture.canvasWidth / imgRef.current.width, gesture.canvasHeight / imgRef.current.height);
+      const scale = touchDistance(event.touches[0], event.touches[1]) / gesture.distance;
+      const nextZoom = Math.min(5, Math.max(minimumZoom, gesture.zoom * scale));
+      setZoom(nextZoom);
+      setPosition(clampPosition(gesture.position.x, gesture.position.y, gesture.canvasWidth, gesture.canvasHeight, nextZoom));
+    }
+  };
+
+  const handleTouchEnd = (event) => {
+    if (event.touches.length === 1) {
+      const point = pointInCanvas(event.touches[0]);
+      touchGesture.current = {
+        type: "drag",
+        offsetX: point.x - position.x,
+        offsetY: point.y - position.y,
+      };
+      setDragging(true);
+    } else {
+      touchGesture.current = null;
+      setDragging(false);
+    }
   };
   const createJpeg = (canvas, quality) => new Promise((resolve) => {
     canvas.toBlob(resolve, "image/jpeg", quality);
@@ -186,7 +252,7 @@ const EditPage = ({ image, onReset }) => {
     <main className="min-h-[calc(100vh-73px)] bg-[#0b3534] px-4 py-8 sm:px-8 lg:py-12">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="text-sm font-semibold text-lime-300">IMAGE WORKSPACE</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-white">Resize your image</h1><p className="mt-2 text-sm text-slate-400">Drag to reposition · Hold Alt and scroll to zoom</p></div>
+          <div><p className="text-sm font-semibold text-lime-300">IMAGE WORKSPACE</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-white">Resize your image</h1><p className="mt-2 text-sm text-slate-400">Drag to reposition · Hold Alt and scroll to zoom · Pinch to zoom on touch screens</p></div>
           <button onClick={onReset} className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-white/35 hover:bg-white/5"><FiRotateCcw /> Choose another image</button>
         </div>
 
@@ -195,7 +261,7 @@ const EditPage = ({ image, onReset }) => {
             <div className="mb-4 flex items-center justify-between px-1 text-xs font-medium text-slate-400"><span className="flex items-center gap-2"><FiImage className="text-lime-300" /> Live preview</span><span>{width || "–"} × {height || "–"} px</span></div>
             <div className="flex min-h-[300px] items-center justify-center overflow-auto rounded-2xl bg-[#061f20] p-3" style={{ backgroundImage: "linear-gradient(45deg, #0a2b2c 25%, transparent 25%), linear-gradient(-45deg, #0a2b2c 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #0a2b2c 75%), linear-gradient(-45deg, transparent 75%, #0a2b2c 75%)", backgroundSize: "22px 22px", backgroundPosition: "0 0, 0 11px, 11px -11px, -11px 0" }}>
               <div className="relative inline-block max-w-full">
-                <canvas ref={canvasRef} onMouseDown={startDrag} onMouseMove={moveDrag} onMouseUp={() => setDragging(false)} onMouseLeave={() => setDragging(false)} onWheel={handleWheel} className="block max-h-[520px] max-w-full cursor-move rounded-sm shadow-2xl" />
+                <canvas ref={canvasRef} onMouseDown={startDrag} onMouseMove={moveDrag} onMouseUp={() => setDragging(false)} onMouseLeave={() => setDragging(false)} onWheel={handleWheel} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd} className="block max-h-[520px] max-w-full touch-none cursor-move rounded-sm shadow-2xl" />
                 <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(to right, #d1fae5 1px, transparent 1px), linear-gradient(to bottom, #d1fae5 1px, transparent 1px)", backgroundSize: "50px 50px" }} />
               </div>
             </div>
