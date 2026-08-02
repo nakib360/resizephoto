@@ -149,7 +149,7 @@ const EditPage = ({ image, onReset }) => {
         offsetX: point.x - position.x,
         offsetY: point.y - position.y,
       };
-      setDragging(true);
+      setDragging(true);   
     } else {
       touchGesture.current = null;
       setDragging(false);
