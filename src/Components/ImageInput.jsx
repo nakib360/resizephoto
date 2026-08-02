@@ -20,8 +20,8 @@ const ImageInput = ({ setImage }) => {
       <div className="absolute -left-20 top-0 size-80 rounded-full bg-teal-400/10 blur-3xl" />
       <div className="absolute -right-16 bottom-0 size-72 rounded-full bg-lime-300/10 blur-3xl" />
       <div className="relative mx-auto max-w-4xl text-center">
-        <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-lime-300/20 bg-lime-300/10 px-4 py-2 text-sm font-medium text-lime-200"><FiZap /> Fast, private & free</p>
-        <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-6xl">Make every image fit <span className="text-lime-300">perfectly.</span></h1>
+        <p className="mb-5 inline-flex items-center gap-2 rounded-full  px-4 py-2 text-xl font-medium text-lime-200"><FiZap /> Fast, private & free</p>
+        <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-6xl">Make every image resize <span className="text-lime-300">perfectly.</span></h1>
         <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">Resize, preview and download your images without sending them anywhere. Your image stays in your browser.</p>
 
         <div

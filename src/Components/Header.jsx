@@ -3,7 +3,7 @@ import { FiUpload } from "react-icons/fi";
 import logo from "../assets/resizepic logo full version.svg";
 
 const Header = ({ onGetStarted }) => (
-  <header className="sticky top-0 z-50 border-b border-white/10 bg-[#092c2c]/85 backdrop-blur-xl">
+  <header className="sticky top-0 z-50 border-b border-white/10 bg-[#636D2F]/30  backdrop-blur-xl">
     <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
       <button
         type="button"
