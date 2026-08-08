@@ -12,7 +12,7 @@ const Header = ({ onGetStarted }) => (
         aria-label="Resize Picture home"
       >
         <img
-          className="md:h-13 w-auto h-10"
+          className="md:h-11 w-auto h-8"
           src={logo}
           alt="Resize Picture"
         /> 
