@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { FiCheck, FiImage, FiLock, FiUploadCloud, FiZap } from "react-icons/fi";
+import { FiCheck, FiImage, FiLock, FiUploadCloud, FiZap, FiUpload } from "react-icons/fi";
 
 const ImageInput = ({ setImage }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -33,7 +33,7 @@ const ImageInput = ({ setImage }) => {
           className={`mt-10 cursor-pointer rounded-3xl border p-4 transition sm:p-6 ${isDragging ? "border-lime-300 bg-lime-300/15 shadow-2xl shadow-lime-300/10" : "border-white/15 bg-[#0a2929]/80 hover:border-lime-300/60 hover:bg-[#0c3030]"}`}
         >
           <div className="rounded-2xl border border-dashed border-white/15 px-6 py-14 sm:py-16">
-            <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-lime-300 text-[#092d2c] shadow-lg shadow-lime-300/20"><FiUploadCloud size={32} /></span>
+            <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-lime-300 text-[#092d2c] shadow-lg shadow-lime-300/20"><FiUpload size={32} /></span>
             <h2 className="mt-6 text-xl font-bold text-white">{isDragging ? "Drop your image here" : "Drop an image here"}</h2>
             <p className="mt-2 text-sm text-slate-400">or click to choose a file from your device</p>
             <span className="mt-6 inline-block rounded-lg bg-white/8 px-4 py-2 text-xs font-medium text-slate-300">JPG, PNG, WEBP and GIF supported</span>

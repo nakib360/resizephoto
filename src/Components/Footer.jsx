@@ -12,7 +12,7 @@ const Footer = () => (
         <a href="/" className="transition hover:text-lime-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-300">Home</a>
         <a href="#resize-image" className="transition hover:text-lime-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-300">Resize image</a>
       </nav>
-      <p>© {new Date().getFullYear()} Resize Picture</p>
+      <p>© {new Date().getFullYear()} Resize Picture</p> 
     </div>
   </footer>
 );
