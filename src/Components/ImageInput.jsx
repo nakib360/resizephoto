@@ -24,7 +24,8 @@ const ImageInput = ({ setImage }) => {
         <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-6xl">Make every image resize <span className="text-lime-300">perfectly.</span></h1>
         <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">Resize, preview and download your images without sending them anywhere. Your image stays in your browser.</p>
 
-        <div
+        <section
+          aria-labelledby="upload-image-heading"
           onClick={() => inputRef.current?.click()}
           onDragEnter={(event) => { event.preventDefault(); setIsDragging(true); }}
           onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }}
@@ -34,20 +35,23 @@ const ImageInput = ({ setImage }) => {
         >
           <div className="rounded-2xl border border-dashed border-white/15 px-6 py-14 sm:py-16">
             <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-lime-300 text-[#092d2c] shadow-lg shadow-lime-300/20"><FiUpload size={32} /></span>
-            <h2 className="mt-6 text-xl font-bold text-white">{isDragging ? "Drop your image here" : "Drop an image here"}</h2>
+            <h2 id="upload-image-heading" className="mt-6 text-xl font-bold text-white">{isDragging ? "Drop your image here" : "Drop an image here"}</h2>
             <p className="mt-2 text-sm text-slate-400">or click to choose a file from your device</p>
             <span className="mt-6 inline-block rounded-lg bg-white/8 px-4 py-2 text-xs font-medium text-slate-300">JPG, PNG, WEBP and GIF supported</span>
           </div>
           <input ref={inputRef} type="file" accept="image/*" onChange={(event) => handleImage(event.target.files[0])} className="hidden" />
-        </div>
+        </section>
 
-        <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
+        <section aria-labelledby="benefits-heading" className="mt-10">
+          <h2 id="benefits-heading" className="sr-only">Why use Resize Picture</h2>
+          <div className="grid gap-4 text-left sm:grid-cols-3">
           {[[FiZap, "Quick editing", "Change dimensions in seconds."], [FiLock, "Private by default", "Your file never leaves your device."], [FiImage, "Ready to export", "Download a crisp PNG when done."]].map(([Icon, title, text]) => (
-            <div key={title} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <article key={title} className="rounded-2xl border border-white/10 bg-white/5 p-5">
               <Icon className="text-lime-300" size={20} /><h3 className="mt-3 font-semibold text-white">{title}</h3><p className="mt-1 text-sm text-slate-400">{text}</p>
-            </div>
+            </article>
           ))}
-        </div>
+          </div>
+        </section>
         <p className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-500"><FiCheck className="text-lime-300" /> No sign-up required</p>
       </div>
     </main>
