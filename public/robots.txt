@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://resizepicture.vercel.app/sitemap.xml
+Sitemap: https://resizepicture.web.app/sitemap.xml
